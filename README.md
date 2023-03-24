@@ -1,0 +1,1 @@
+# krakend-http-cache
