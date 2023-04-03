@@ -1,6 +1,58 @@
-# krakend-http-cache
+# Krakend Http Cache
 
-## Krakend configuration example
+Krakend plugin for caching backend responses
+
+## Client configuration
+
+```json
+...
+"plugin/http-client": {
+    "name": "onliner/krakend-http-cache",
+    "onliner/krakend-http-cache": {
+        "ttl": 180,
+        "connection": "redis"
+    }
+}
+...
+```
+
+`ttl` - cache ttl in seconds
+`connection` - name of cache connection
+
+## Cache connections
+
+```json
+...
+"plugin/http-server": {
+    "name": ["onliner/krakend-http-cache"],
+    "onliner/krakend-http-cache": {
+        "connections": {
+            "<connection_name>": {
+                "driver": "<connection_driver>",
+                "options": {}
+            }
+        }
+    }
+}
+...
+```
+
+`connections` - list of named cache connections
+
+### Supported cache drivers
+
+- inmemory
+- redis
+
+### Redis connection options
+
+- `addr` - host:port address (**required**)
+- `user` - username to authenticate the current connection (default: "")
+- `pass` - password (default: "")
+- `db` - redis db (default: 0)
+- `pool_size` - maximum number of socket connections (default: 10)
+
+## Сonfiguration example
 
 ```json
 {
@@ -32,24 +84,24 @@
     ],
     "extra_config": {
         "plugin/http-server": {
-        "name": ["onliner/krakend-http-cache"],
-        "onliner/krakend-http-cache": {
-            "connections": {
-                "inmemory": {
-                    "driver": "inmemory"
-                },
-                "redis": {
-                    "driver": "redis",
-                    "options": {
-                        "addr": "127.0.0.1:6379",
-                        "user": "root",
-                        "pass": "123qwe",
-                        "db": 1,
-                        "pool_size": 5
+            "name": ["onliner/krakend-http-cache"],
+            "onliner/krakend-http-cache": {
+                "connections": {
+                    "inmemory": {
+                        "driver": "inmemory"
+                    },
+                    "redis": {
+                        "driver": "redis",
+                        "options": {
+                            "addr": "127.0.0.1:6379",
+                            "user": "root",
+                            "pass": "123qwe",
+                            "db": 1,
+                            "pool_size": 5
+                        }
                     }
                 }
             }
-        }
         }
     }
 }
