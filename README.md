@@ -41,7 +41,7 @@ Krakend plugin for caching backend responses
 
 ### Supported cache drivers
 
-- inmemory
+- memory
 - redis
 
 ### Redis connection options
