@@ -32,12 +32,22 @@ func NewCacheHandler(client *http.Client, logger Logger) *CacheHandler {
 func (h *CacheHandler) Handle(cnf *ClientConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		reqClone := cloneRequest(req)
+		var res *http.Response
 
-		res := h.loadFromCache(reqClone, cnf)
+		if isRequestCacheable(reqClone) {
+			res = h.loadFromCache(reqClone, cnf)
+		} else {
+			h.logger.Warning(fmt.Sprintf(
+				"response caching is not supported for %s %s",
+				req.Method,
+				req.URL.RequestURI(),
+			))
+		}
+
 		if res == nil {
 			res = h.makeRequest(reqClone)
 
-			if h.supportCaching(reqClone, res) {
+			if isResponseCacheable(res) {
 				h.saveToCache(res, cnf)
 			}
 		}
@@ -52,7 +62,6 @@ func (h *CacheHandler) Handle(cnf *ClientConfig) http.Handler {
 }
 
 func (h *CacheHandler) makeRequest(req *http.Request) *http.Response {
-	h.logger.Debug(fmt.Sprintf("#%v", req.Header))
 	res, err := h.client.Do(req)
 	if err != nil {
 		h.logger.Error(err)
@@ -65,7 +74,7 @@ func (h *CacheHandler) makeRequest(req *http.Request) *http.Response {
 }
 
 func (h *CacheHandler) loadFromCache(req *http.Request, cnf *ClientConfig) *http.Response {
-	conn := GetCacheConn(cnf.Conn)
+	conn := GetCache(cnf.Conn)
 	if conn == nil {
 		h.logger.Error(fmt.Sprintf("conn %s not found", cnf.Conn))
 		return nil
@@ -93,7 +102,7 @@ func (h *CacheHandler) saveToCache(res *http.Response, cnf *ClientConfig) {
 		return
 	}
 
-	conn := GetCacheConn(cnf.Conn)
+	conn := GetCache(cnf.Conn)
 	if conn == nil {
 		h.logger.Error(fmt.Sprintf("conn %s not found", cnf.Conn))
 		return
@@ -103,15 +112,6 @@ func (h *CacheHandler) saveToCache(res *http.Response, cnf *ClientConfig) {
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("failed save to cache: %v", err))
 	}
-}
-
-func (h *CacheHandler) supportCaching(req *http.Request, res *http.Response) bool {
-	if req.Method != http.MethodGet {
-		h.logger.Warning("can't non GET method for %s %s", req.Method, req.URL.RequestURI())
-		return false
-	}
-
-	return res.StatusCode >= 200 && res.StatusCode <= 299
 }
 
 func (h *CacheHandler) writeResponse(w http.ResponseWriter, res *http.Response) {
@@ -133,6 +133,14 @@ func (h *CacheHandler) writeResponse(w http.ResponseWriter, res *http.Response) 
 	}
 
 	res.Body.Close()
+}
+
+func isRequestCacheable(r *http.Request) bool {
+	return r.Method == http.MethodGet
+}
+
+func isResponseCacheable(r *http.Response) bool {
+	return r.StatusCode >= 200 && r.StatusCode <= 299
 }
 
 func cloneRequest(req *http.Request) *http.Request {

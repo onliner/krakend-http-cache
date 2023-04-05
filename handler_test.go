@@ -11,18 +11,20 @@ import (
 )
 
 const body string = `{"message": "Hello Wordl"}`
-const conn string = "inmemory"
+const conn string = "memory"
 
 func setup() {
 	httpmock.Activate()
-	if GetCacheConn(conn) == nil {
-		RegisterCacheConn(conn, &ConnCnf{Driver: "inmemory"}) // nolint
+	if GetCache(conn) == nil {
+		if err := RegisterCache(conn, &CacheCnf{Driver: "memory"}); err != nil {
+			println(err)
+		}
 	}
 }
 
 func teardown() {
 	httpmock.DeactivateAndReset()
-	GetCacheConn(conn).Flush()
+	GetCache(conn).Flush()
 }
 
 func newHandler() http.Handler {
@@ -92,7 +94,7 @@ func TestHandle(t *testing.T) {
 		assert.Equal(t, request.callCount, httpmock.GetTotalCallCount())
 
 		httpmock.Reset()
-		GetCacheConn(conn).Flush()
+		GetCache(conn).Flush()
 	}
 }
 
@@ -107,7 +109,7 @@ func TestHandleStale(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
 	assert.Equal(t, body, rr.Body.String(), "Body mismatch")
 
-	GetCacheConn(conn).Flush()
+	GetCache(conn).Flush()
 
 	rr = testClient(req)
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")

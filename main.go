@@ -12,7 +12,7 @@ import (
 type registerer string
 
 type SrvConfig struct {
-	Conns map[string]ConnCnf `mapstructure:"connections"`
+	Conns map[string]CacheCnf `mapstructure:"connections"`
 }
 
 var Namespace = "onliner/krakend-http-cache"
@@ -65,8 +65,8 @@ func (r registerer) registerHandlers(_ context.Context, extra map[string]interfa
 		return h, err
 	}
 
-	for name, conn := range config.Conns {
-		if err = RegisterCacheConn(name, &conn); err != nil {
+	for name, cacheCnf := range config.Conns {
+		if err = RegisterCache(name, &cacheCnf); err != nil {
 			return h, err
 		}
 	}

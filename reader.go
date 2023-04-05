@@ -13,7 +13,7 @@ type reusableReader struct {
 
 func ReusableReader(r io.Reader) io.Reader {
 	readBuf := bytes.Buffer{}
-	readBuf.ReadFrom(r) // nolint
+	_, _ = readBuf.ReadFrom(r)
 	backBuf := bytes.Buffer{}
 
 	return reusableReader{
@@ -32,5 +32,5 @@ func (r reusableReader) Read(p []byte) (int, error) {
 }
 
 func (r reusableReader) reset() {
-	io.Copy(r.readBuf, r.backBuf) // nolint
+	_, _ = io.Copy(r.readBuf, r.backBuf)
 }

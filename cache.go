@@ -1,27 +1,43 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"time"
 
 	rd "github.com/go-redis/redis/v8"
+	"github.com/mitchellh/mapstructure"
 
-	"github.com/faabiosr/cachego"
 	"github.com/faabiosr/cachego/redis"
 	"github.com/faabiosr/cachego/sync"
 )
 
-type pool map[string]cachego.Cache
-type Driver string
+type (
+	Driver string
+	pool   map[string]Cache
 
-type ConnCnf struct {
-	Driver
-	Opts map[string]interface{} `mapstructure:"options"`
-}
+	Cache interface {
+		Fetch(key string) (string, error)
+		Save(key string, value string, lifeTime time.Duration) error
+		Flush() error
+	}
+
+	CacheCnf struct {
+		Driver
+		Opts map[string]interface{} `mapstructure:"options"`
+	}
+
+	RedisCnf struct {
+		Addr     string
+		User     string
+		Pass     string
+		DB       int
+		PoolSize int
+	}
+)
 
 var cachePool = make(pool)
 
-func RegisterCacheConn(name string, cnf *ConnCnf) error {
+func RegisterCache(name string, cnf *CacheCnf) error {
 	switch cnf.Driver {
 	case "redis":
 		opt, err := buildRedisCnf(cnf.Opts)
@@ -30,7 +46,7 @@ func RegisterCacheConn(name string, cnf *ConnCnf) error {
 		}
 
 		cachePool[name] = redis.New(rd.NewClient(opt))
-	case "inmemory":
+	case "memory":
 		cachePool[name] = sync.New()
 	default:
 		return fmt.Errorf("Cannot create connection %s for %s", name, cnf.Driver)
@@ -39,35 +55,23 @@ func RegisterCacheConn(name string, cnf *ConnCnf) error {
 	return nil
 }
 
-func GetCacheConn(name string) cachego.Cache {
+func GetCache(name string) Cache {
 	return cachePool[name]
 }
 
 func buildRedisCnf(input map[string]interface{}) (*rd.Options, error) {
-	var result rd.Options
+	var config RedisCnf
 
-	addr, ok := input["addr"].(string)
-	if !ok || addr == "" {
-		return nil, errors.New("missing or empty address")
+	err := mapstructure.WeakDecode(input, &config)
+	if err != nil {
+		return nil, err
 	}
 
-	result.Addr = addr
-
-	if user, ok := input["user"].(string); ok {
-		result.Username = user
-	}
-
-	if pass, ok := input["pass"].(string); ok {
-		result.Password = pass
-	}
-
-	if db, ok := input["db"].(float64); ok {
-		result.DB = int(db)
-	}
-
-	if poolSize, ok := input["pool_size"].(float64); ok {
-		result.PoolSize = int(poolSize)
-	}
-
-	return &result, nil
+	return &rd.Options{
+		Addr:     config.Addr,
+		Username: config.User,
+		Password: config.Pass,
+		DB:       config.DB,
+		PoolSize: config.PoolSize,
+	}, nil
 }

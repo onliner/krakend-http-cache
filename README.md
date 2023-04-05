@@ -46,7 +46,7 @@ Krakend plugin for caching backend responses
 
 ### Redis connection options
 
-- `addr` - host:port address (**required**)
+- `addr` - host:port address (default: localhost:6379)
 - `user` - username to authenticate the current connection (default: "")
 - `pass` - password (default: "")
 - `db` - redis db (default: 0)
@@ -88,7 +88,7 @@ Krakend plugin for caching backend responses
             "onliner/krakend-http-cache": {
                 "connections": {
                     "inmemory": {
-                        "driver": "inmemory"
+                        "driver": "memory"
                     },
                     "redis": {
                         "driver": "redis",
