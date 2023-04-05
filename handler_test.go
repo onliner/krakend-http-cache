@@ -76,8 +76,6 @@ func TestHandle(t *testing.T) {
 		{http.MethodGet, http.StatusNotFound, 2},
 		{http.MethodGet, http.StatusInternalServerError, 2},
 		{http.MethodGet, http.StatusServiceUnavailable, 2},
-		{http.MethodPost, http.StatusOK, 2},
-		{http.MethodPut, http.StatusOK, 2},
 	}
 
 	for _, request := range requests {
@@ -95,6 +93,18 @@ func TestHandle(t *testing.T) {
 
 		httpmock.Reset()
 		GetCache(conn).Flush()
+	}
+}
+
+func TestHandleNotSupportedMethods(t *testing.T) {
+	methods := []string{http.MethodPost, http.MethodPut}
+	for _, method := range methods {
+		req := newRequest(method, nil)
+		registerResponse(method, http.StatusOK, nil)
+
+		rr := testClient(req)
+		assert.Equal(t, http.StatusNotImplemented, rr.Result().StatusCode, "Status code mismatch")
+		assert.Empty(t, rr.Body.String(), "Body mismatch")
 	}
 }
 

@@ -31,19 +31,14 @@ func NewCacheHandler(client *http.Client, logger Logger) *CacheHandler {
 
 func (h *CacheHandler) Handle(cnf *ClientConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		reqClone := cloneRequest(req)
-		var res *http.Response
-
-		if isRequestCacheable(reqClone) {
-			res = h.loadFromCache(reqClone, cnf)
-		} else {
-			h.logger.Warning(fmt.Sprintf(
-				"response caching is not supported for %s %s",
-				req.Method,
-				req.URL.RequestURI(),
-			))
+		if req.Method != http.MethodGet {
+			h.logger.Error(fmt.Sprintf("response caching is not supported for %s %s", req.Method, req.URL.RequestURI()))
+			h.writeResponse(w, &http.Response{StatusCode: http.StatusNotImplemented})
+			return
 		}
 
+		reqClone := cloneRequest(req)
+		res := h.loadFromCache(reqClone, cnf)
 		if res == nil {
 			res = h.makeRequest(reqClone)
 
@@ -133,10 +128,6 @@ func (h *CacheHandler) writeResponse(w http.ResponseWriter, res *http.Response) 
 	}
 
 	res.Body.Close()
-}
-
-func isRequestCacheable(r *http.Request) bool {
-	return r.Method == http.MethodGet
 }
 
 func isResponseCacheable(r *http.Response) bool {
