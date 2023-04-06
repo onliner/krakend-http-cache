@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.17'
+          cache: false
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Golangci Lint
+        uses: golangci/golangci-lint-action@v3
+
+      - name: Run tests
+        run: go test -race
