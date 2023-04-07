@@ -26,8 +26,8 @@ jobs:
 
       - name: Build project
         run: |
-          docker run --rm -v "$PWD:/app" -w /app krakend/builder:2.1.4 go build -buildmode=plugin -o krakend-http-cache-redis.so .
-          zip ./krakend-http-cache-redis.zip ./krakend-http-cache-redis.so
+          docker run --rm -v "$PWD:/app" -w /app krakend/builder:2.2.1 go build -buildmode=plugin -o krakend-http-cache.so .
+          zip ./krakend-http-cache.zip ./krakend-http-cache.so
 
       - name: Bump version and push tag
         id: bump_tag
@@ -54,6 +54,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.JENKSY_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./krakend-http-cache-redis.zip
-          asset_name: krakend-http-cache-redis.zip
+          asset_path: ./krakend-http-cache.zip
+          asset_name: krakend-http-cache.zip
           asset_content_type: application/zip
