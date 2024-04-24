@@ -10,7 +10,8 @@ Krakend plugin for caching backend responses
     "name": "onliner/krakend-http-cache",
     "onliner/krakend-http-cache": {
         "ttl": 180,
-        "connection": "redis"
+        "connection": "redis",
+        "headers": []
     }
 }
 ...
@@ -18,6 +19,7 @@ Krakend plugin for caching backend responses
 
 `ttl` - cache ttl in seconds
 `connection` - name of cache connection
+`headers` - headers used for cache key
 
 ## Cache connections
 
@@ -74,7 +76,8 @@ Krakend plugin for caching backend responses
                             "name": "onliner/krakend-http-cache",
                             "onliner/krakend-http-cache": {
                                 "ttl": 180,
-                                "connection": "redis"
+                                "connection": "redis",
+                                "headers": ["X-Custom-Headers"]
                             }
                         }
                     }

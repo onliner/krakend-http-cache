@@ -97,7 +97,7 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandleNotSupportedMethods(t *testing.T) {
-	methods := []string{http.MethodPost, http.MethodPut}
+	methods := []string{http.MethodHead, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
 	for _, method := range methods {
 		req := newRequest(method, nil)
 		registerResponse(method, http.StatusOK, nil)
@@ -147,4 +147,44 @@ func TestHandleEtag(t *testing.T) {
 	assert.Equal(t, body, rr.Body.String(), "Body mismatch")
 
 	assert.Equal(t, 1, httpmock.GetTotalCallCount())
+}
+
+func TestHandleHeaders(t *testing.T) {
+	setup()
+	defer teardown()
+
+	requests := []struct {
+		headers1  map[string]string
+		headers2  map[string]string
+		callCount int
+	}{
+		{map[string]string{"X-Custom-Header": "1"}, map[string]string{"x-custom-header": "1"}, 1},
+		{map[string]string{"X-Custom-Header": "1"}, map[string]string{"X-Custom-Header": "2"}, 2},
+		{map[string]string{"X-Custom-Header": "1"}, map[string]string{"X-Custom-Header": ""}, 2},
+		{map[string]string{"X-Custom-Header": "1"}, nil, 2},
+	}
+
+	handler := NewCacheHandler(http.DefaultClient, noopLogger{}).Handle(&ClientConfig{Ttl: 1, Conn: conn, Headers: []string{"X-Custom-Header"}})
+
+	for _, request := range requests {
+		req := newRequest(http.MethodGet, request.headers1)
+		registerResponse(http.MethodGet, http.StatusOK, nil)
+
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
+		assert.Equal(t, body, rr.Body.String(), "Body mismatch")
+
+		req = newRequest(http.MethodGet, request.headers2)
+		rr = httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
+		assert.Equal(t, body, rr.Body.String(), "Body mismatch")
+
+		assert.Equal(t, request.callCount, httpmock.GetTotalCallCount())
+		httpmock.Reset()
+		GetCache(conn).Flush()
+	}
 }

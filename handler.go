@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,8 +22,9 @@ type CacheHandler struct {
 }
 
 type ClientConfig struct {
-	Ttl  uint64
-	Conn string `mapstructure:"connection"`
+	Ttl     uint64
+	Conn    string `mapstructure:"connection"`
+	Headers []string
 }
 
 func NewCacheHandler(client *http.Client, logger Logger) *CacheHandler {
@@ -75,7 +77,7 @@ func (h *CacheHandler) loadFromCache(req *http.Request, cnf *ClientConfig) *http
 		return nil
 	}
 
-	v, err := conn.Fetch(cacheKey(req))
+	v, err := conn.Fetch(cacheKey(req, cnf))
 	if err != nil {
 		return nil
 	}
@@ -103,7 +105,7 @@ func (h *CacheHandler) saveToCache(res *http.Response, cnf *ClientConfig) {
 		return
 	}
 
-	err = conn.Save(cacheKey(res.Request), string(dump), time.Duration(cnf.Ttl)*time.Second)
+	err = conn.Save(cacheKey(res.Request, cnf), string(dump), time.Duration(cnf.Ttl)*time.Second)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("failed save to cache: %v", err))
 	}
@@ -146,8 +148,20 @@ func cloneRequest(req *http.Request) *http.Request {
 	return clone
 }
 
-func cacheKey(req *http.Request) string {
+func cacheKey(req *http.Request, cnf *ClientConfig) string {
 	url := req.URL.RequestURI()
+
+	var headers []string
+	for _, h := range cnf.Headers {
+		val := req.Header.Values(h)
+		if val != nil {
+			headers = append(headers, fmt.Sprintf("%s:%s", strings.ToLower(h), strings.Join(val, ",")))
+		}
+	}
+
+	if len(headers) > 0 {
+		url = fmt.Sprintf("%s|headers:%s", url, strings.Join(headers, "/"))
+	}
 
 	return fmt.Sprintf("krakend-hc:%s", uuid.NewSHA1(uuid.NameSpaceURL, []byte(url)))
 }
