@@ -21,12 +21,6 @@ type CacheHandler struct {
 	logger Logger
 }
 
-type ClientConfig struct {
-	Ttl     uint64
-	Conn    string `mapstructure:"connection"`
-	Headers []string
-}
-
 func NewCacheHandler(client *http.Client, logger Logger) *CacheHandler {
 	return &CacheHandler{client, logger}
 }

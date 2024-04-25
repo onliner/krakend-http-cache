@@ -28,7 +28,14 @@ func teardown() {
 }
 
 func newHandler() http.Handler {
-	return NewCacheHandler(http.DefaultClient, noopLogger{}).Handle(&ClientConfig{Ttl: 1, Conn: conn})
+	cnf, _ := NewClientConfig(map[string]interface{}{
+		"onliner/krakend-http-cache": map[string]interface{}{
+			"ttl":        1,
+			"connection": "memory",
+		},
+	})
+
+	return NewCacheHandler(http.DefaultClient, noopLogger{}).Handle(cnf)
 }
 
 func headerFromMap(input map[string]string) http.Header {
@@ -164,7 +171,15 @@ func TestHandleHeaders(t *testing.T) {
 		{map[string]string{"X-Custom-Header": "1"}, nil, 2},
 	}
 
-	handler := NewCacheHandler(http.DefaultClient, noopLogger{}).Handle(&ClientConfig{Ttl: 1, Conn: conn, Headers: []string{"X-Custom-Header"}})
+	cnf, _ := NewClientConfig(map[string]interface{}{
+		"onliner/krakend-http-cache": map[string]interface{}{
+			"ttl":        1,
+			"connection": "memory",
+			"headers":    []string{"X-Custom-Header"},
+		},
+	})
+
+	handler := NewCacheHandler(http.DefaultClient, noopLogger{}).Handle(cnf)
 
 	for _, request := range requests {
 		req := newRequest(http.MethodGet, request.headers1)
