@@ -15,7 +15,9 @@ func TestNewClientConfig(t *testing.T) {
 		}
 	}`)
 	var input map[string]interface{}
-	json.Unmarshal(raw, &input)
+	err := json.Unmarshal(raw, &input)
+	assert.Nil(t, err)
+
 	cnf, err := NewClientConfig(input)
 
 	assert.Nil(t, err)
@@ -33,7 +35,9 @@ func TestClientConfigHeadersNormalize(t *testing.T) {
 		}
 	}`)
 	var input map[string]interface{}
-	json.Unmarshal(raw, &input)
+	err := json.Unmarshal(raw, &input)
+	assert.Nil(t, err)
+
 	cnf, err := NewClientConfig(input)
 
 	assert.Nil(t, err)
@@ -62,17 +66,19 @@ func TestNewSrvConfig(t *testing.T) {
 	}`)
 
 	var input map[string]interface{}
-	json.Unmarshal(raw, &input)
+	err := json.Unmarshal(raw, &input)
+	assert.Nil(t, err)
+
 	cnf, err := NewSrvConfig(input)
 
 	assert.Nil(t, err)
 
 	expected := map[string]CacheCnf{
-		"inmemory": CacheCnf{
+		"inmemory": {
 			Driver("memory"),
 			nil,
 		},
-		"redis": CacheCnf{
+		"redis": {
 			Driver("redis"),
 			map[string]interface{}{
 				"addr": "127.0.0.1:6379",
