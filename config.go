@@ -22,8 +22,8 @@ type SrvConfig struct {
 
 func NewClientConfig(input map[string]interface{}) (*ClientConfig, error) {
 	var config ClientConfig
-	err := parseConfig(input, &config)
-	if err != nil {
+
+	if err := parseConfig(input, &config); err != nil {
 		return nil, err
 	}
 
@@ -34,8 +34,8 @@ func NewClientConfig(input map[string]interface{}) (*ClientConfig, error) {
 
 func NewSrvConfig(input map[string]interface{}) (*SrvConfig, error) {
 	var config SrvConfig
-	err := parseConfig(input, &config)
-	if err != nil {
+
+	if err := parseConfig(input, &config); err != nil {
 		return nil, err
 	}
 
@@ -48,23 +48,20 @@ func parseConfig(input map[string]interface{}, output interface{}) error {
 		return errors.New("configuration not found")
 	}
 
-	err := mapstructure.WeakDecode(cnf, &output)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return mapstructure.WeakDecode(cnf, &output)
 }
 
 func normalizeHeaders(headers []string) []string {
-	res := make(map[string]bool)
-	for _, h := range headers {
-		res[textproto.CanonicalMIMEHeaderKey(h)] = true
-	}
-
+	seen := make(map[string]bool)
 	var values []string
-	for h := range res {
-		values = append(values, h)
+
+	for _, h := range headers {
+		h = textproto.CanonicalMIMEHeaderKey(h)
+		if _, ok := seen[h]; !ok {
+			seen[h] = true
+			values = append(values, h)
+		}
+		seen[textproto.CanonicalMIMEHeaderKey(h)] = true
 	}
 
 	slices.Sort(values)

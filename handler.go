@@ -147,15 +147,12 @@ func cacheKey(req *http.Request, cnf *ClientConfig) string {
 
 	var headers []string
 	for _, h := range cnf.Headers {
-		val := req.Header.Values(h)
-		if val != nil {
+		if val := req.Header.Values(h); val != nil {
 			headers = append(headers, fmt.Sprintf("%s:%s", strings.ToLower(h), strings.Join(val, ",")))
 		}
 	}
 
-	if len(headers) > 0 {
-		url = fmt.Sprintf("%s|headers:%s", url, strings.Join(headers, "/"))
-	}
+	url += "|headers:" + strings.Join(headers, "/")
 
 	return fmt.Sprintf("krakend-hc:%s", uuid.NewSHA1(uuid.NameSpaceURL, []byte(url)))
 }

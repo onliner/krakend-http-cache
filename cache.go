@@ -62,8 +62,7 @@ func GetCache(name string) Cache {
 func buildRedisCnf(input map[string]interface{}) (*rd.Options, error) {
 	var config RedisCnf
 
-	err := mapstructure.WeakDecode(input, &config)
-	if err != nil {
+	if err := mapstructure.WeakDecode(input, &config); err != nil {
 		return nil, err
 	}
 
