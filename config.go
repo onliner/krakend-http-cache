@@ -61,7 +61,6 @@ func normalizeHeaders(headers []string) []string {
 			seen[h] = true
 			values = append(values, h)
 		}
-		seen[textproto.CanonicalMIMEHeaderKey(h)] = true
 	}
 
 	slices.Sort(values)
