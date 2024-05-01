@@ -12,7 +12,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version: '1.22.2'
           cache: false
 
       - name: Checkout
@@ -27,6 +27,7 @@ jobs:
       - name: Build project
         run: |
           docker run --rm -v "$PWD:/app" -w /app krakend/builder:2.6.2 go build -buildmode=plugin -o krakend-http-cache.so .
+          docker run --rm -v "$PWD/krakend-http-cache.so:/app/krakend-http-cache.so" -w /app devopsfaith/krakend:2.6.2 krakend test-plugin -sc krakend-http-cache.so
           zip ./krakend-http-cache.zip ./krakend-http-cache.so
 
       - name: Bump version and push tag
