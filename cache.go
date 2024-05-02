@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	rd "github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
+	rd "github.com/redis/go-redis/v9"
 
 	"github.com/faabiosr/cachego/redis"
 	"github.com/faabiosr/cachego/sync"
@@ -49,7 +49,7 @@ func RegisterCache(name string, cnf *CacheCnf) error {
 	case "memory":
 		cachePool[name] = sync.New()
 	default:
-		return fmt.Errorf("Cannot create connection %s for %s", name, cnf.Driver)
+		return fmt.Errorf("cannot create connection %s for %s", name, cnf.Driver)
 	}
 
 	return nil
@@ -62,8 +62,7 @@ func GetCache(name string) Cache {
 func buildRedisCnf(input map[string]interface{}) (*rd.Options, error) {
 	var config RedisCnf
 
-	err := mapstructure.WeakDecode(input, &config)
-	if err != nil {
+	if err := mapstructure.WeakDecode(input, &config); err != nil {
 		return nil, err
 	}
 
