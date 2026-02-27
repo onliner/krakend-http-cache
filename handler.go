@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/go-http-utils/fresh"
-	"github.com/go-http-utils/headers"
+	uh "github.com/go-http-utils/headers"
 )
 
 type CacheHandler struct {
@@ -123,7 +123,7 @@ func (h *CacheHandler) writeResponse(w http.ResponseWriter, res *http.Response) 
 		h.logger.Error(fmt.Sprintf("failed write response body: %v", err))
 	}
 
-	res.Body.Close()
+	_ = res.Body.Close()
 }
 
 func isResponseCacheable(r *http.Response) bool {
@@ -132,12 +132,12 @@ func isResponseCacheable(r *http.Response) bool {
 
 func cloneRequest(req *http.Request) *http.Request {
 	clone := req.Clone(req.Context())
-	clone.Header.Del(headers.IfModifiedSince)
-	clone.Header.Del(headers.IfUnmodifiedSince)
-	clone.Header.Del(headers.IfNoneMatch)
-	clone.Header.Del(headers.IfMatch)
-	clone.Header.Del(headers.CacheControl)
-	clone.Header.Del(headers.AcceptEncoding)
+	clone.Header.Del(uh.IfModifiedSince)
+	clone.Header.Del(uh.IfUnmodifiedSince)
+	clone.Header.Del(uh.IfNoneMatch)
+	clone.Header.Del(uh.IfMatch)
+	clone.Header.Del(uh.CacheControl)
+	clone.Header.Del(uh.AcceptEncoding)
 
 	return clone
 }

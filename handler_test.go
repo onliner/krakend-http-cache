@@ -5,26 +5,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-http-utils/headers"
+	uh "github.com/go-http-utils/headers"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
-const body string = `{"message": "Hello Wordl"}`
+const body string = `{"message": "Hello World"}`
 const conn string = "memory"
 
-func setup() {
+func setup(t *testing.T) {
 	httpmock.Activate()
 	if GetCache(conn) == nil {
-		if err := RegisterCache(conn, &CacheCnf{Driver: "memory"}); err != nil {
-			println(err)
-		}
+		err := RegisterCache(conn, &CacheCnf{Driver: "memory"})
+		assert.NoError(t, err)
 	}
 }
 
-func teardown() {
+func teardown(t *testing.T) {
 	httpmock.DeactivateAndReset()
-	GetCache(conn).Flush()
+	err := GetCache(conn).Flush()
+	assert.NoError(t, err)
 }
 
 func newHandler() http.Handler {
@@ -68,8 +68,8 @@ func testClient(req *http.Request) *httptest.ResponseRecorder {
 }
 
 func TestHandle(t *testing.T) {
-	setup()
-	defer teardown()
+	setup(t)
+	defer teardown(t)
 
 	requests := []struct {
 		method    string
@@ -99,7 +99,8 @@ func TestHandle(t *testing.T) {
 		assert.Equal(t, request.callCount, httpmock.GetTotalCallCount())
 
 		httpmock.Reset()
-		GetCache(conn).Flush()
+		err := GetCache(conn).Flush()
+		assert.NoError(t, err)
 	}
 }
 
@@ -116,8 +117,8 @@ func TestHandleNotSupportedMethods(t *testing.T) {
 }
 
 func TestHandleStale(t *testing.T) {
-	setup()
-	defer teardown()
+	setup(t)
+	defer teardown(t)
 
 	req := newRequest(http.MethodGet, nil)
 	registerResponse(http.MethodGet, http.StatusOK, nil)
@@ -126,7 +127,8 @@ func TestHandleStale(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
 	assert.Equal(t, body, rr.Body.String(), "Body mismatch")
 
-	GetCache(conn).Flush()
+	err := GetCache(conn).Flush()
+	assert.NoError(t, err)
 
 	rr = testClient(req)
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
@@ -136,18 +138,18 @@ func TestHandleStale(t *testing.T) {
 }
 
 func TestHandleEtag(t *testing.T) {
-	setup()
-	defer teardown()
+	setup(t)
+	defer teardown(t)
 
-	req := newRequest(http.MethodGet, map[string]string{headers.IfNoneMatch: `W/"foo"`})
-	registerResponse(http.MethodGet, http.StatusOK, map[string]string{headers.ETag: `W/"foo"`})
+	req := newRequest(http.MethodGet, map[string]string{uh.IfNoneMatch: `W/"foo"`})
+	registerResponse(http.MethodGet, http.StatusOK, map[string]string{uh.ETag: `W/"foo"`})
 
 	rr := testClient(req)
 
 	assert.Equal(t, http.StatusNotModified, rr.Result().StatusCode, "Status code mismatch")
 	assert.Equal(t, "", rr.Body.String(), "Body mismatch")
 
-	req = newRequest(http.MethodGet, map[string]string{headers.IfNoneMatch: `W/"bar"`})
+	req = newRequest(http.MethodGet, map[string]string{uh.IfNoneMatch: `W/"bar"`})
 	rr = testClient(req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode, "Status code mismatch")
@@ -157,8 +159,8 @@ func TestHandleEtag(t *testing.T) {
 }
 
 func TestHandleHeaders(t *testing.T) {
-	setup()
-	defer teardown()
+	setup(t)
+	defer teardown(t)
 
 	requests := []struct {
 		headers1  map[string]string
@@ -200,6 +202,7 @@ func TestHandleHeaders(t *testing.T) {
 
 		assert.Equal(t, request.callCount, httpmock.GetTotalCallCount())
 		httpmock.Reset()
-		GetCache(conn).Flush()
+		err := GetCache(conn).Flush()
+		assert.NoError(t, err)
 	}
 }
